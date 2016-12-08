@@ -1,5 +1,5 @@
 # ReactThreeJsGlobe
-Demo React Application to test ThreeJS functionality surrounding an interactive globe
+[Demo React Application](https://arthurakay.github.io/ReactThreeJsGlobe/) to test ThreeJS functionality surrounding an interactive globe.
 
 ![React with ThreeJS](https://raw.githubusercontent.com/arthurakay/ReactThreeJsGlobe/master/globe.png)
 
