@@ -1,6 +1,14 @@
 # ReactThreeJsGlobe
 [Demo React Application](https://arthurakay.github.io/ReactThreeJsGlobe/) to test ThreeJS functionality surrounding an interactive globe.
 
+Current interactions:
+
+ * UP/DOWN arrows to rotate on X axis
+ * LEFT/RIGHT arrows to rotate on Y axis
+ * A/S keys to zoom in/out
+ 
+More coming!
+
 ![React with ThreeJS](https://raw.githubusercontent.com/arthurakay/ReactThreeJsGlobe/master/globe.png)
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
