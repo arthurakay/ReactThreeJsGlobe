@@ -1,8 +1,8 @@
 import React from 'react';
 import {
-    Scene, SpotLight, PointLight, Object3D, Texture, ShaderMaterial,
+    Scene, SpotLight, PointLight, Object3D,
     SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader,
-    LineBasicMaterial, Geometry, Vector3, Line
+    LineBasicMaterial, Geometry, Vector3, Line, CubicBezierCurve3, Path
 } from 'three';
 
 import map_indexed from '../../public/images/map_indexed.png';
@@ -220,6 +220,54 @@ class Map extends React.Component {
         document.addEventListener('mouseup', this.onMouseUp, false);
     }
 
+    initCurve() {
+        let start = new Vector3(15, 0, 0),
+            end = new Vector3(0, 15, 0),
+            curve = this.makeConnectionLineGeometry(start, end, 5);
+
+        this.rotating.add(curve);
+    }
+
+    /**
+     *
+     * @param start {Vector3}
+     * @param end {Vector3}
+     * @param value
+     * @returns {*}
+     */
+    makeConnectionLineGeometry(start, end, value) {
+        let distanceBetweenCountryCenter = 30, // TODO: exporter.center.clone().subSelf(importer.center).length();
+            distanceHalf = distanceBetweenCountryCenter * 0.5;
+
+        //	midpoint for the curve
+        let midPoint = start.clone().lerp(end, 0.5);
+        var midLength = midPoint.length();
+        midPoint.normalize();
+        midPoint.multiplyScalar(midLength + distanceBetweenCountryCenter * 0.7);
+
+        //	the normal from start to end
+        let normal = (new Vector3()).sub(start, end);
+        normal.normalize();
+
+        let midStartAnchor = midPoint.clone().add(normal.clone().multiplyScalar(distanceHalf));
+        let midEndAnchor = midPoint.clone().add(normal.clone().multiplyScalar(-distanceHalf));
+
+        //	now make a bezier curve out of the above like so in the diagram
+        let splineCurveC = new CubicBezierCurve3(start, midStartAnchor, midEndAnchor, end);
+
+        //	how many vertices do we want on this guy? this is for *each* side
+        let vertexCountDesired = Math.floor(distanceBetweenCountryCenter * 0.02 + 6) * 2;
+        let points = splineCurveC.getPoints(vertexCountDesired);
+
+        let path = new Path(points);
+        let geometry = path.createPointsGeometry(50);
+        let material = new LineBasicMaterial({
+            color: 0xff0000,
+            linewidth: value
+        });
+        return new Line(geometry, material);
+    }
+
     init() {
         this.scene = new Scene();
         this.rotating = new Object3D();
@@ -237,6 +285,7 @@ class Map extends React.Component {
         // add something to scene
         this.initSphere();
         this.initAxes();
+        this.initCurve();
     }
 
     render() {
