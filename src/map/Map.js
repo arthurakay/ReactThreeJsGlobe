@@ -1,7 +1,8 @@
 import React from 'react';
 import {
     Scene, SpotLight, PointLight, Object3D, Texture, ShaderMaterial,
-    SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader
+    SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader,
+    LineBasicMaterial, Geometry, Vector3, Line
 } from 'three';
 
 import map_indexed from '../../public/images/map_indexed.png';
@@ -58,51 +59,6 @@ class Map extends React.Component {
     }
 
     initSphere() {
-        //let lookupCanvas = document.createElement('canvas');
-        //lookupCanvas.width = 256;
-        //lookupCanvas.height = 1;
-        //
-        //let lookupTexture = new Texture(lookupCanvas);
-        //lookupTexture.magFilter = NearestFilter;
-        //lookupTexture.minFilter = NearestFilter;
-        //lookupTexture.needsUpdate = true;
-        //
-        //let indexedMapTexture = new Texture(mapIndexedImage);
-        //indexedMapTexture.needsUpdate = true;
-        //indexedMapTexture.magFilter = NearestFilter;
-        //indexedMapTexture.minFilter = NearestFilter;
-        //
-        //let outlinedMapTexture = new Texture(mapOutlineImage);
-        //outlinedMapTexture.needsUpdate = true;
-        //
-        //let uniforms = {
-        //    'mapIndex': {
-        //        type: 't',
-        //        value: 0,
-        //        texture: indexedMapTexture
-        //    },
-        //    'lookup': {
-        //        type: 't',
-        //        value: 1,
-        //        texture: lookupTexture
-        //    },
-        //    'outline': {
-        //        type: 't',
-        //        value: 2,
-        //        texture: outlinedMapTexture
-        //    },
-        //    'outlineLevel': {
-        //        type: 'f',
-        //        value: 1
-        //    }
-        //};
-        //
-        //var shaderMaterial = new ShaderMaterial({
-        //    uniforms: uniforms,
-        //    vertexShader: document.getElementById('globeVertexShader').textContent,
-        //    fragmentShader: document.getElementById('globeFragmentShader').textContent
-        //});
-
         let texture = new TextureLoader().load(map_indexed);
         let geometry = new SphereGeometry(15, 32, 32, 0, 6.3, 6.3);
         let material = new MeshBasicMaterial({
@@ -110,11 +66,28 @@ class Map extends React.Component {
             map: texture
         });
         let sphere = new Mesh(geometry, material);
-//        this.scene.add(sphere);
 
-        this.rotating = new Object3D();
         this.rotating.add(sphere);
-        this.scene.add(this.rotating);
+    }
+
+    initAxes() {
+        let material = new LineBasicMaterial({
+            color: 0x0000ff
+        });
+
+        let xAxis = new Geometry();
+        xAxis.vertices.push(
+            new Vector3(-30, 0, 0),
+            new Vector3(30, 0, 0)
+        );
+        this.rotating.add(new Line(xAxis, material));
+
+        let yAxis = new Geometry();
+        yAxis.vertices.push(
+            new Vector3(0, -30, 0),
+            new Vector3(0, 30, 0)
+        );
+        this.rotating.add(new Line(yAxis, material));
     }
 
     animate = () => {
@@ -249,6 +222,9 @@ class Map extends React.Component {
 
     init() {
         this.scene = new Scene();
+        this.rotating = new Object3D();
+        this.scene.add(this.rotating);
+
         this.initCamera();
         this.initWebGLRenderer();
         this.initLights();
@@ -260,6 +236,7 @@ class Map extends React.Component {
 
         // add something to scene
         this.initSphere();
+        this.initAxes();
     }
 
     render() {
