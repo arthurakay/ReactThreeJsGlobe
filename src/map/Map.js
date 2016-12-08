@@ -4,11 +4,10 @@ import {
     SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader,
     LineBasicMaterial, Geometry, Vector3, Line, CubicBezierCurve3, Path
 } from 'three';
+import TrackballControls from './TrackballControls';
 
+// textures
 import map_indexed from '../../public/images/map_indexed.png';
-
-let dragging = false,
-    startDragX, startDragY;
 
 class Map extends React.Component {
     glContainer = null;
@@ -91,6 +90,7 @@ class Map extends React.Component {
     }
 
     animate = () => {
+        this.controls.update();
         this.reRenderWebGLRenderer();
         requestAnimationFrame(this.animate);
     };
@@ -178,46 +178,11 @@ class Map extends React.Component {
         };
     };
 
-    onMouseMove = (event) => {
-        if (dragging) {
-            let limit = 0.025,
-                diffX = event.clientX - startDragX,
-                diffY = event.clientY - startDragY;
-
-            if (diffX > 10 || diffX < -10) {
-                startDragX = event.clientX;
-
-                // left/right movement (clientX) rotates around the Y axis
-                this.rotating.rotateY(diffX * limit);
-            }
-
-            if (diffY > 10 || diffY < -10) {
-                startDragY = event.clientY;
-
-                // upd/down movement (clientY) rotates around the X axis
-                this.rotating.rotateX(diffY * limit);
-            }
-
-
-        }
-    };
-
-    onMouseDown = (event) => {
-        dragging = true;
-        startDragX = event.clientX;
-        startDragY = event.clientY;
-    };
-
-    onMouseUp = () => {
-        dragging = false;
-        startDragX = undefined;
-        startDragY = undefined;
-    };
-
     initMouseEvents() {
-        document.addEventListener('mousemove', this.onMouseMove, true);
-        document.addEventListener('mousedown', this.onMouseDown, true);
-        document.addEventListener('mouseup', this.onMouseUp, false);
+        this.controls = new TrackballControls(this.camera, document.body);
+        this.controls.minDistance = 100.0;
+        this.controls.maxDistance = 800.0;
+        this.controls.dynamicDampingFactor = 0.1;
     }
 
     initCurve() {
@@ -284,7 +249,7 @@ class Map extends React.Component {
 
         // add something to scene
         this.initSphere();
-        this.initAxes();
+        //this.initAxes();
         this.initCurve();
     }
 
