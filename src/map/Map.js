@@ -6,11 +6,8 @@ import {
 
 import map_indexed from '../../public/images/map_indexed.png';
 
-//const mapIndexedImage = new Image();
-//mapIndexedImage.src = 'images/map_indexed.png';
-//
-//const mapOutlineImage = new Image();
-//mapOutlineImage.src = 'images/map_outline.png';
+let dragging = false,
+    startDragX, startDragY;
 
 class Map extends React.Component {
     glContainer = null;
@@ -34,7 +31,7 @@ class Map extends React.Component {
 
     initWebGLRenderer() {
         this.renderer = new WebGLRenderer();
-        this.renderer.setSize(window.innerWidth-10, window.innerHeight-10);
+        this.renderer.setSize(window.innerWidth - 10, window.innerHeight - 10);
 
         // physically render
         this.glContainer.appendChild(this.renderer.domElement);
@@ -208,14 +205,58 @@ class Map extends React.Component {
         };
     };
 
+    onMouseMove = (event) => {
+        if (dragging) {
+            let limit = 0.025,
+                diffX = event.clientX - startDragX,
+                diffY = event.clientY - startDragY;
+
+            if (diffX > 10 || diffX < -10) {
+                startDragX = event.clientX;
+
+                // left/right movement (clientX) rotates around the Y axis
+                this.rotating.rotateY(diffX * limit);
+            }
+
+            if (diffY > 10 || diffY < -10) {
+                startDragY = event.clientY;
+
+                // upd/down movement (clientY) rotates around the X axis
+                this.rotating.rotateX(diffY * limit);
+            }
+
+
+        }
+    };
+
+    onMouseDown = (event) => {
+        dragging = true;
+        startDragX = event.clientX;
+        startDragY = event.clientY;
+    };
+
+    onMouseUp = () => {
+        dragging = false;
+        startDragX = undefined;
+        startDragY = undefined;
+    };
+
+    initMouseEvents() {
+        document.addEventListener('mousemove', this.onMouseMove, true);
+        document.addEventListener('mousedown', this.onMouseDown, true);
+        document.addEventListener('mouseup', this.onMouseUp, false);
+    }
+
     init() {
         this.scene = new Scene();
         this.initCamera();
         this.initWebGLRenderer();
         this.initLights();
 
+        // event listeners
         this.resize();
         this.keyDown();
+        this.initMouseEvents();
 
         // add something to scene
         this.initSphere();
