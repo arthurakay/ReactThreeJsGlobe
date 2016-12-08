@@ -4,11 +4,13 @@ import {
     SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader
 } from 'three';
 
-const mapIndexedImage = new Image();
-mapIndexedImage.src = 'images/map_indexed.png';
+import map_indexed from '../../public/images/map_indexed.png';
 
-const mapOutlineImage = new Image();
-mapOutlineImage.src = '/images/map_outline.png';
+//const mapIndexedImage = new Image();
+//mapIndexedImage.src = 'images/map_indexed.png';
+//
+//const mapOutlineImage = new Image();
+//mapOutlineImage.src = 'images/map_outline.png';
 
 class Map extends React.Component {
     glContainer = null;
@@ -104,7 +106,7 @@ class Map extends React.Component {
         //    fragmentShader: document.getElementById('globeFragmentShader').textContent
         //});
 
-        let texture = new TextureLoader().load('/images/map_indexed.png');
+        let texture = new TextureLoader().load(map_indexed);
         let geometry = new SphereGeometry(15, 32, 32, 0, 6.3, 6.3);
         let material = new MeshBasicMaterial({
             color: 0xffff,
