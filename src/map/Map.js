@@ -2,7 +2,7 @@ import React from 'react';
 import {
     Scene, SpotLight, PointLight, Object3D,
     SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader,
-    LineBasicMaterial, Geometry, Vector3, Line, CubicBezierCurve3, Path
+    LineBasicMaterial, Geometry, Vector3, Line, CubicBezierCurve3, Path, Color, Curve
 } from 'three';
 import TrackballControls from './TrackballControls';
 
@@ -59,7 +59,7 @@ class Map extends React.Component {
 
     initSphere() {
         let texture = new TextureLoader().load(map_indexed);
-        let geometry = new SphereGeometry(15, 32, 32, 0, 6.3, 6.3);
+        let geometry = new SphereGeometry(15, 32, 32)//, 0, 6.3, 6.3);
         let material = new MeshBasicMaterial({
             color: 0xffff,
             map: texture
@@ -186,11 +186,34 @@ class Map extends React.Component {
     }
 
     initCurve() {
-        let start = new Vector3(15, 0, 0),
-            end = new Vector3(0, 15, 0),
-            curve = this.makeConnectionLineGeometry(start, end, 5);
+        let start = convertLatLonToVec3(40.7, -73.6).multiplyScalar(15);
+        let end = convertLatLonToVec3(30, -90).multiplyScalar(15);
+        this.drawCurve(
+            this.createSphereArc(start, end),
+            0xFF0000
+        );
 
-        this.rotating.add(curve);
+
+        let start2 = convertLatLonToVec3(41.40338, 2.17403).multiplyScalar(15);
+        let end2 = convertLatLonToVec3(-27.2265015,153.0982721).multiplyScalar(15);
+        this.drawCurve(
+            this.createSphereArc(start2, end2)
+        );
+    }
+
+    drawCurve(curve) {
+        var lineGeometry = new Geometry();
+        lineGeometry.vertices = curve.getPoints(100);
+        lineGeometry.computeLineDistances();
+
+        let lineMaterial = new LineBasicMaterial({
+            color: 0xff0000,
+            linewidth: 2
+        });
+
+        var line = new Line(lineGeometry, lineMaterial);
+
+        this.scene.add(line);
     }
 
     /**
@@ -200,18 +223,17 @@ class Map extends React.Component {
      * @param value
      * @returns {*}
      */
-    makeConnectionLineGeometry(start, end, value) {
-        let distanceBetweenCountryCenter = 30, // TODO: exporter.center.clone().subSelf(importer.center).length();
+    createSphereArc(start, end) {
+        let distanceBetweenCountryCenter = start.distanceTo(end),
             distanceHalf = distanceBetweenCountryCenter * 0.5;
 
         //	midpoint for the curve
         let midPoint = start.clone().lerp(end, 0.5);
-        var midLength = midPoint.length();
         midPoint.normalize();
-        midPoint.multiplyScalar(midLength + distanceBetweenCountryCenter * 0.7);
+        midPoint.multiplyScalar(30);
 
         //	the normal from start to end
-        let normal = (new Vector3()).sub(start, end);
+        let normal = new Vector3().subVectors(start, end);
         normal.normalize();
 
         let midStartAnchor = midPoint.clone().add(normal.clone().multiplyScalar(distanceHalf));
@@ -220,18 +242,9 @@ class Map extends React.Component {
         //	now make a bezier curve out of the above like so in the diagram
         let splineCurveC = new CubicBezierCurve3(start, midStartAnchor, midEndAnchor, end);
 
-        //	how many vertices do we want on this guy? this is for *each* side
-        let vertexCountDesired = Math.floor(distanceBetweenCountryCenter * 0.02 + 6) * 2;
-        let points = splineCurveC.getPoints(vertexCountDesired);
-
-        let path = new Path(points);
-        let geometry = path.createPointsGeometry(50);
-        let material = new LineBasicMaterial({
-            color: 0xff0000,
-            linewidth: value
-        });
-        return new Line(geometry, material);
+        return splineCurveC;
     }
+
 
     init() {
         this.scene = new Scene();
@@ -263,3 +276,13 @@ class Map extends React.Component {
 }
 
 export default Map;
+
+function convertLatLonToVec3(lat, lon) {
+    lat = lat * Math.PI / 180.0;
+    lon = -lon * Math.PI / 180.0;
+
+    return new Vector3(
+        Math.cos(lat) * Math.cos(lon),
+        Math.sin(lat),
+        Math.cos(lat) * Math.sin(lon));
+}
