@@ -1,13 +1,14 @@
 import React from 'react';
 import {
-    Scene, SpotLight, PointLight, Object3D,
-    SphereGeometry, WebGLRenderer, Mesh, PerspectiveCamera, MeshBasicMaterial, TextureLoader,
-    LineBasicMaterial, Geometry, Vector3, Line, CubicBezierCurve3, Path, Color, Curve
+    Scene, Object3D,
+    WebGLRenderer,
+    LineBasicMaterial, Geometry, Vector3, Line
 } from 'three';
-import TrackballControls from './TrackballControls';
 
-// textures
-import map_indexed from '../../public/images/map_indexed.png';
+import Globe from './Globe';
+import Camera from './Camera';
+import Lights from './Lights';
+import Events from './Events';
 
 class Map extends React.Component {
     glContainer = null;
@@ -21,14 +22,6 @@ class Map extends React.Component {
         this.animate();
     }
 
-    initCamera() {
-        this.camera = new PerspectiveCamera(12, window.innerWidth / window.innerHeight, 1, 20000);
-        this.camera.position.z = 400;
-        this.camera.position.y = 0;
-        this.camera.lookAt(this.scene.width / 2, this.scene.height / 2);
-        this.scene.add(this.camera);
-    }
-
     initWebGLRenderer() {
         this.renderer = new WebGLRenderer();
         this.renderer.setSize(window.innerWidth - 10, window.innerHeight - 10);
@@ -40,33 +33,6 @@ class Map extends React.Component {
     reRenderWebGLRenderer() {
         this.renderer.clear();
         this.renderer.render(this.scene, this.camera);
-    }
-
-    initLights() {
-        let light1 = new SpotLight(0xeeeeee, 3);
-        light1.position.x = 730;
-        light1.position.y = 520;
-        light1.position.z = 626;
-        light1.castShadow = true;
-        this.scene.add(light1);
-
-        let light2 = new PointLight(0x222222, 14.8);
-        light2.position.x = -640;
-        light2.position.y = -500;
-        light2.position.z = -1000;
-        this.scene.add(light2);
-    }
-
-    initSphere() {
-        let texture = new TextureLoader().load(map_indexed);
-        let geometry = new SphereGeometry(15, 32, 32)//, 0, 6.3, 6.3);
-        let material = new MeshBasicMaterial({
-            color: 0xffff,
-            map: texture
-        });
-        let sphere = new Mesh(geometry, material);
-
-        this.rotating.add(sphere);
     }
 
     initAxes() {
@@ -95,173 +61,36 @@ class Map extends React.Component {
         requestAnimationFrame(this.animate);
     };
 
-    resize = (renderer, camera) => {
-        let callback = () => {
-            let minWidth = 1280,
-                w = window.innerWidth;
-
-            if (w < minWidth) {
-                w = minWidth;
-            }
-
-            // notify the renderer of the size change
-            this.renderer.setSize(w, window.innerHeight);
-
-            // update the camera
-            this.camera.aspect = w / window.innerHeight;
-            this.camera.updateProjectionMatrix();
-        };
-
-        // bind the resize event
-        window.addEventListener('resize', callback, false);
-
-        // return .stop() the function to stop watching window resize
-        return {
-            /**
-             * Stop watching window resize
-             */
-            stop: function() {
-                window.removeEventListener('resize', callback);
-            }
-        };
-    };
-
-    keyDown = () => {
-        let callback = (e) => {
-            switch (e.keyCode) {
-                case 38:
-                    // UP key
-                    this.rotating.rotateX(-0.5);
-                    break;
-
-                case 40:
-                    // DOWN key
-                    this.rotating.rotateX(0.5);
-                    break;
-
-                case 37:
-                    // LEFT key
-                    this.rotating.rotateY(-0.5);
-                    break;
-
-                case 39:
-                    // RIGHT key
-                    this.rotating.rotateY(0.5);
-                    break;
-
-                case 65:
-                    // A key
-                    this.camera.position.z -= 10;
-                    break;
-
-                case 83:
-                    // S key
-                    this.camera.position.z += 10;
-                    break;
-
-                default:
-                    break;
-            }
-        };
-
-        // bind the resize event
-        window.addEventListener('keydown', callback, false);
-
-        // return .stop() the function to stop watching window resize
-        return {
-            /**
-             * Stop watching window resize
-             */
-            stop: function() {
-                window.removeEventListener('keydown', callback);
-            }
-        };
-    };
-
-    initMouseEvents() {
-        this.controls = new TrackballControls(this.camera, document.body);
-        this.controls.minDistance = 100.0;
-        this.controls.maxDistance = 800.0;
-        this.controls.dynamicDampingFactor = 0.1;
-    }
-
     initCurve() {
         let start = convertLatLonToVec3(40.7, -73.6).multiplyScalar(15);
         let end = convertLatLonToVec3(30, -90).multiplyScalar(15);
-        this.drawCurve(
-            this.createSphereArc(start, end),
-            0xFF0000
+        this.rotating.add(
+            Globe.drawCurve(start, end)
         );
-
 
         let start2 = convertLatLonToVec3(41.40338, 2.17403).multiplyScalar(15);
         let end2 = convertLatLonToVec3(-27.2265015,153.0982721).multiplyScalar(15);
-        this.drawCurve(
-            this.createSphereArc(start2, end2)
+        this.rotating.add(
+            Globe.drawCurve(start2, end2)
         );
     }
-
-    drawCurve(curve) {
-        var lineGeometry = new Geometry();
-        lineGeometry.vertices = curve.getPoints(100);
-        lineGeometry.computeLineDistances();
-
-        let lineMaterial = new LineBasicMaterial({
-            color: 0xff0000,
-            linewidth: 2
-        });
-
-        var line = new Line(lineGeometry, lineMaterial);
-
-        this.scene.add(line);
-    }
-
-    /**
-     *
-     * @param start {Vector3}
-     * @param end {Vector3}
-     * @param value
-     * @returns {*}
-     */
-    createSphereArc(start, end) {
-        let distanceBetweenCountryCenter = start.distanceTo(end),
-            distanceHalf = distanceBetweenCountryCenter * 0.5;
-
-        //	midpoint for the curve
-        let midPoint = start.clone().lerp(end, 0.5);
-        midPoint.normalize();
-        midPoint.multiplyScalar(30);
-
-        //	the normal from start to end
-        let normal = new Vector3().subVectors(start, end);
-        normal.normalize();
-
-        let midStartAnchor = midPoint.clone().add(normal.clone().multiplyScalar(distanceHalf));
-        let midEndAnchor = midPoint.clone().add(normal.clone().multiplyScalar(-distanceHalf));
-
-        //	now make a bezier curve out of the above like so in the diagram
-        let splineCurveC = new CubicBezierCurve3(start, midStartAnchor, midEndAnchor, end);
-
-        return splineCurveC;
-    }
-
 
     init() {
         this.scene = new Scene();
         this.rotating = new Object3D();
         this.scene.add(this.rotating);
 
-        this.initCamera();
+        this.camera = Camera.initCamera(this.scene);
+        this.scene.add(this.camera);
+
         this.initWebGLRenderer();
-        this.initLights();
+        Lights.initLights(this.scene);
 
-        // event listeners
-        this.resize();
-        this.keyDown();
-        this.initMouseEvents();
 
-        // add something to scene
-        this.initSphere();
+        this.controls = Events.initEvents(this.camera, this.rotating);
+        Globe.renderGlobe(this.rotating);
+
+
         //this.initAxes();
         this.initCurve();
     }
